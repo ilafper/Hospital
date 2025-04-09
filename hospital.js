@@ -25,6 +25,8 @@ async function run() {
         console.log("OKOK CONECTADA!");
         const collection = client.db("hospital").collection("usuarios");
         usuariosHospital = await collection.find().toArray();
+        console.log(usuariosHospital);
+        
     } finally {
         await client.close();
     }
@@ -51,15 +53,29 @@ async function menu1() {
             case 1:
                 let nombre = await leeMenu("Introduce tu nombre de usuario: ");
                 let contra = await leeMenu("Introduce tu contraseña: ");
+                let usuarioEncontrado;
                 for (let i = 0; i < usuariosHospital.length; i++) {
-                    if (nombre===usuariosHospital[i].usuario && contra===usuariosHospital[i].contraseña && usuariosHospital[i].rol=="admin"  ) {
+                    if (nombre===usuariosHospital[i].usuario && contra===usuariosHospital[i].contra) {
+                        usuarioEncontrado=usuariosHospital[i];
+                        console.log(usuarioEncontrado);
+                        break;
+                    }else{
+                        //console.log("Nombre o contraseña incorrecta");
+                    }
+                }
+                
+
+                if (usuarioEncontrado) {
+                    if (usuarioEncontrado.rol==="admin") {
                         await menuAdmin(nombre);
-                        
-                    }else if (nombre===usuariosHospital[i].usuario && contra===usuariosHospital[i].contraseña && usuariosHospital[i].rol=="administrativo"  ) {
+                    }else if(usuarioEncontrado.rol==="administrativo"){
                         await menuAdministrativo(nombre);
                     }else{
-                        console.log("Nombre o contraseña incorrecta");
+                        console.log("No existe ese rol");
                     }
+                }else{
+                    console.log("nombre o contraseña incorrecta");
+                    
                 }
                 break;
             case 2:
@@ -103,7 +119,7 @@ async function menuAdmin(nombre) {
 async function menuAdministrativo(nombre) {
     let opcion=0;
     while (opcion !=2) {
-        console.log("\nBienvenido"+ nombre);
+        console.log("\nBienvenido "+ nombre);
         console.log("1. administrativo");
         console.log("2. Salir");
         opcion = parseInt(await leeMenu("Seleccione opción: "));
@@ -121,11 +137,6 @@ async function menuAdministrativo(nombre) {
         }
     }
 }
-
-
-
-
-
 
 
 async function iniciarPrograma() {
