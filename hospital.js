@@ -24,8 +24,11 @@ async function run() {
         await client.db("hospital").command({ ping: 1 });
         console.log("OKOK CONECTADA!");
         const collection = client.db("hospital").collection("usuarios");
+        const collection2 = client.db("hospital").collection("pacientes");
         usuariosHospital = await collection.find().toArray();
-        console.log(usuariosHospital);
+        pacientes = await collection2.find().toArray();
+        //console.log(pacientes);
+        //console.log(usuariosHospital);
         
     } finally {
         await client.close();
@@ -54,6 +57,7 @@ async function menu1() {
                 let nombre = await leeMenu("Introduce tu nombre de usuario: ");
                 let contra = await leeMenu("Introduce tu contraseña: ");
                 let usuarioEncontrado;
+
                 for (let i = 0; i < usuariosHospital.length; i++) {
                     if (nombre===usuariosHospital[i].usuario && contra===usuariosHospital[i].contra) {
                         usuarioEncontrado=usuariosHospital[i];
@@ -92,6 +96,7 @@ async function menu1() {
 //MENU DE ADMIN
 async function menuAdmin(nombre) {
     let opcion2=0;
+    const collection2 = client.db("hospital").collection("pacientes");
     while (opcion2 !==2) {
         console.log("\n Bienvenido  "+ nombre);
         console.log("1. Dar de alta");
@@ -99,7 +104,7 @@ async function menuAdmin(nombre) {
         opcion2 = parseInt(await leeMenu("Seleccione opción: "));
         switch (opcion2) {
             case 1:
-                console.log("dar de alta");
+                await crearPaciente();
                 break;
             case 2:
                 console.log("Saliendo...");
@@ -139,9 +144,51 @@ async function menuAdministrativo(nombre) {
 }
 
 
+async function crearPaciente() {
+    const uri = 'mongodb+srv://ialfper:ialfper21@alumnos.zoinj.mongodb.net/?retryWrites=true&w=majority&appName=alumnos';
+    const client = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            strict: true,
+            deprecationErrors: true,
+        }
+    });
+
+    try {
+        await client.connect();
+        const collection = client.db("hospital").collection("pacientes");
+
+        // Pedimos los datoss
+        let nuevoNombre = await leeMenu("Nuevo nombre del paciente: ");
+        let nuevoApellido = await leeMenu("Nuevo apellido del paciente: ");
+        let nuevoDireccion = await leeMenu("Dirección del paciente: ");
+        let nuevoTelefono = await leeMenu("Teléfono del paciente: ");
+
+        // Creamos el objeto paciente
+        let nuevoPaciente = {
+            nombre: nuevoNombre,
+            apellido: nuevoApellido,
+            telefono: nuevoTelefono,
+            direccion: nuevoDireccion
+        };
+
+        // Insertamos en MongoDB
+        await collection.insertOne(nuevoPaciente);
+
+        console.log("Se ha creado al paciente:", nuevoPaciente);
+        
+    } catch (err) {
+        console.error("nono"+ err);
+    } finally {
+        await client.close();
+    }
+}
+
+
+
 async function iniciarPrograma() {
-    await run(); // Espera a que se conecte y se carguen los datos
-    await menu1(); // Luego muestra el menú
+    await run();
+    await menu1();
 }
 
 iniciarPrograma();
