@@ -128,7 +128,8 @@ async function menuAdministrativo(nombre) {
         console.log("1. Crear paciente");
         console.log("2. historialCitas");
         console.log("3. Añadir cita");
-        console.log("4. Salir");
+        console.log("4. Editar cita(asistio o no)");
+        console.log("5. Salir");
         opcion = parseInt(await leeMenu("Seleccione opción: "));
         switch (opcion) {
             case 1:
@@ -144,16 +145,18 @@ async function menuAdministrativo(nombre) {
                 break;
 
             case 4:
+                await cambiarCita();
+                await menuAdministrativo(nombre);
+                break;
+            case 5:
                 console.log("saliendo...");
                 await menu1();
                 break;
-        
             default:
                 break;
         }
     }
 }
-
 
 
 // crear paciente.
@@ -316,7 +319,7 @@ async function citasUsuarioSelec() {
         }
 
         let seleccion = parseInt(await leeMenu("Selecciona el número del paciente: "));
-        if (isNaN(seleccion) || seleccion < 0 || seleccion >= pacientes.length) {
+        if (isNaN(seleccion) || seleccion <= 0 || seleccion > listaPacientes.length) {
             console.log("Selección inválida.");
             return;
         }
@@ -328,11 +331,13 @@ async function citasUsuarioSelec() {
         for (let i = 0; i < listacitas.length; i++) {
 
            if (pacienteSeleccionado._id.toString() === listacitas[i].codigoPaciente.toString()) {
-            citasPacienteSelec.push(listacitas[i]);
+                citasPacienteSelec.push(listacitas[i]);
             }
         
             
         }
+        
+
         console.log(citasPacienteSelec);
         
 
@@ -346,7 +351,49 @@ async function citasUsuarioSelec() {
 }
 
 
+async function cambiarCita() {
+    const uri = 'mongodb+srv://ialfper:ialfper21@alumnos.zoinj.mongodb.net/?retryWrites=true&w=majority&appName=alumnos';
+    const client = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            strict: true,
+            deprecationErrors: true,
+        }
+    });
 
+    try {
+        await client.connect();
+        const citas = client.db("hospital").collection("citas");
+        let listacitas = await citas.find().toArray();
+        let id=1;
+        console.log("\nLista de Citas:");
+        
+        
+        for (let i = 0; i < listacitas.length; i++) {
+            console.log(`${id++}. Nombre del paciente: ${listacitas[i].nombrePaciente}, Fecha: ${new Date(listacitas[i].fecha).toLocaleDateString()}`);
+        }
+
+        let seleccion = parseInt(await leeMenu("Selecciona la cita: "));
+        if (isNaN(seleccion) || seleccion <= 0 || seleccion > listacitas.length) {
+            console.log("Selección inválida.");
+            return;
+        }
+
+        const citaSelecionada = listacitas[seleccion -1];
+        const asistencia = await leeMenu("¿Asistió el paciente? (s/n): ");
+        const asistio = asistencia.toLowerCase() === 's';
+
+        await citas.updateOne(
+            { _id: citaSelecionada._id },         
+            { $set: { asistio: asistio } }
+        );
+        
+    } catch (err) {
+        console.error("nono"+ err);
+    } finally {
+        await client.close();
+    }
+}
 
 
 
