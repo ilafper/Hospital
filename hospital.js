@@ -27,7 +27,6 @@ async function run() {
         usuariosHospital = await collection.find().toArray();
         
         //console.log(usuariosHospital);
-        
     } finally {
         await client.close();
     }
@@ -40,7 +39,7 @@ function leeMenu(question) {
         });
     });
 }
-
+//menu1 para iniciar sesion
 async function menu1() {
     let opcion = 0;
 
@@ -55,7 +54,7 @@ async function menu1() {
                 let nombre = await leeMenu("Introduce tu nombre de usuario: ");
                 let contra = await leeMenu("Introduce tu contraseña: ");
                 let usuarioEncontrado;
-
+                //primero encontramos al usuario
                 for (let i = 0; i < usuariosHospital.length; i++) {
                     if (nombre===usuariosHospital[i].usuario && contra===usuariosHospital[i].contra) {
                         usuarioEncontrado=usuariosHospital[i];
@@ -66,6 +65,7 @@ async function menu1() {
                     }
                 }
 
+                //si encontramos al usuario comprobamos que rol tiene y lo mandamos a su menu.
                 if (usuarioEncontrado) {
                     if (usuarioEncontrado.rol==="admin") {
                         await menuAdmin(nombre);
@@ -166,6 +166,7 @@ async function menuAdministrativo(nombre) {
 
 // crear paciente.
 async function crearPaciente() {
+    //cogemos la uri y lo relacionado con la bbdd
     const uri = 'mongodb+srv://ialfper:ialfper21@alumnos.zoinj.mongodb.net/?retryWrites=true&w=majority&appName=alumnos';
     const client = new MongoClient(uri, {
         serverApi: {
@@ -176,7 +177,9 @@ async function crearPaciente() {
     });
 
     try {
+        //conectamos con la bbdd
         await client.connect();
+
         const collection = client.db("hospital").collection("pacientes");
 
         // Pedir datos
@@ -205,7 +208,7 @@ async function crearPaciente() {
     }
 }
 
-
+//FUNCION PARA CREAR UN ESPECIALISTA
 async function crearEspecialista() {
     const uri = 'mongodb+srv://ialfper:ialfper21@alumnos.zoinj.mongodb.net/?retryWrites=true&w=majority&appName=alumnos';
     const client = new MongoClient(uri, {
@@ -241,7 +244,7 @@ async function crearEspecialista() {
         await client.close();
     }
 }
-
+//FUNCION PARA ASINAR CITA AL PACIENTE
 async function darCita() {
     const uri = 'mongodb+srv://ialfper:ialfper21@alumnos.zoinj.mongodb.net/?retryWrites=true&w=majority&appName=alumnos';
     const client = new MongoClient(uri, {
@@ -256,16 +259,18 @@ async function darCita() {
         await client.connect();
         const citas = client.db("hospital").collection("citas");
         const pacientes = client.db("hospital").collection("pacientes");
+        //metemos los pacientes de la bbbdd a un array
         let listaPacientes = await pacientes.find().toArray();
+        //variable para mostrar en orden los paciente
         let id=1;
         console.log("Lista de pacientes:");
 
-         //console.log(listaPacientes);
+        // recorremos el array de los pacientes y los mostramos
         for (let i = 0; i < listaPacientes.length; i++) {
             console.log(`${id++}. ${listaPacientes[i].nombre} ${listaPacientes[i].apellido}`);
         }
 
-        
+        //variable que espera el numero del paciente.
         let seleccion = parseInt(await leeMenu("Selecciona el número del paciente: "));
         if (isNaN(seleccion) || seleccion < 0 || seleccion >= pacientes.length) {
             console.log("Selección inválida.");
@@ -273,21 +278,22 @@ async function darCita() {
         }
 
         const pacienteSeleccionado = listaPacientes[seleccion -1];
-
+        //pedir la fecha de la cita por dia, mes y año
         let dia = await leeMenu("Día de la cita: ");
         let mes = await leeMenu("Mes de la cita: ");
         let año = await leeMenu("Año de la cita: ");
-
+        //convertir a la fecha
         let fechaCita = new Date(año, mes - 1, dia); // mes - 1 porque van de 0 a 11
+        //variable por defecto al crear la cita
         let pendiente="pendiente";
-
+        //nuevo objeto de la cita nueva
         let cita = {
             nombrePaciente: `${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellido}`,
-            fecha: fechaCita.toLocaleDateString(),
+            fecha: fechaCita.toLocaleDateString(), //pasamos la fecha a tipo x/x/xxxx.
             codigoPaciente:pacienteSeleccionado._id,
             asistio: pendiente
         };
-
+        //insertamos en la bbdd
         await citas.insertOne(cita);
 
         console.log("Cita guardada correctamente:", cita);
@@ -332,7 +338,7 @@ async function citasUsuarioSelec() {
 
         const pacienteSeleccionado = listaPacientes[seleccion -1];
         
-        
+        //parte para mostrar la citas del paciente en cuestion
         let nId=1;
         for (let i = 0; i < listacitas.length; i++) {
 
@@ -353,7 +359,7 @@ async function citasUsuarioSelec() {
     }
 }
 
-
+//FUNCION PARA CAMBIAR EL ESTADO DE LA CITA
 async function cambiarCita() {
     const uri = 'mongodb+srv://ialfper:ialfper21@alumnos.zoinj.mongodb.net/?retryWrites=true&w=majority&appName=alumnos';
     const client = new MongoClient(uri, {
@@ -372,7 +378,7 @@ async function cambiarCita() {
         let id=1;
         console.log("\nLista de Citas:");
         
-        
+        //MOSTRAMOS TODAS LAS CITAS
         for (let i = 0; i < listacitas.length; i++) {
             console.log(`${id++}. Nombre del paciente: ${listacitas[i].nombrePaciente}, Fecha: ${new Date(listacitas[i].fecha).toLocaleDateString()}`);
         }
@@ -384,9 +390,10 @@ async function cambiarCita() {
         }
 
         const citaSelecionada = listacitas[seleccion -1];
+        //ESCRIBIMO S O N 
         const asistencia = await leeMenu("¿Asistió el paciente? (s/n): ");
         const asistio = asistencia.toLowerCase() === 's';
-
+        //LO MANDAMOS EDITADO A LA BBDD
         await citas.updateOne(
             { _id: citaSelecionada._id },         
             { $set: { asistio: asistio } }
@@ -399,7 +406,7 @@ async function cambiarCita() {
     }
 }
 
-
+//FUNCION PARA FILTRAR
 async function Filtro() {
     let opcion=0;
 
@@ -436,6 +443,8 @@ async function Filtro() {
 
 
 }
+
+//FUNCION PARA FILTRAR POR DIA
 async function filtrarPorDia() {
     const uri = 'mongodb+srv://ialfper:ialfper21@alumnos.zoinj.mongodb.net/?retryWrites=true&w=majority&appName=alumnos';
     const client = new MongoClient(uri, {
@@ -449,26 +458,28 @@ async function filtrarPorDia() {
     try {
         await client.connect();
         const citas = client.db("hospital").collection("citas");
-
+        //PEDIMOS UN NUMERO ENTRE EL 1 Y EL 31
         let filtroDia = parseInt(await leeMenu("Selecciona el número de día (1-31): "));
+        //SI NO CUMPLE , FALLA
         if (isNaN(filtroDia) || filtroDia < 1 || filtroDia > 31) {
             console.log("Día inválido.");
             return;
         }
-
+        //PASAMOS A UNA LISTA LA COLECCION DE CITAS
         const listacitas = await citas.find().toArray();
-
+        //APLICAMOS UN FILTRO PARA BUSCAR
         const citasFiltradas = listacitas.filter(cita => {
             const fecha = new Date(cita.fecha);
             return fecha.getDate() === filtroDia;
         });
 
         console.log(citasFiltradas);
-        
+        //SI ESTA VACIO NO HAY FECHAS QUE CUMPLAN LA COINDICIONES
         if (citasFiltradas.length === 0) {
             console.log(`No hay citas para el día ${filtroDia}.`);
         } else {
             console.log(`Citas para el día ${filtroDia}:`);
+            //MOSTRAR LAS CITAS QUE CUMPLAN ESA COINDICION
             for (let i = 0; i < citasFiltradas.length; i++) {
                 
                 console.log(`${i + 1}. ${citasFiltradas[i].nombrePaciente} - ${citasFiltradas[i].fecha}`);
