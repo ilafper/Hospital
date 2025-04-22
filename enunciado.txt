@@ -4,6 +4,8 @@ citas medicas
 
 HAY pacientes,especialistas,citas(fecha y hora)
 
-
 tendrá un usuario administrador y administrativos. El administrador puede dar de alta a los especialistas.
-el administrativo puede ver el historial de paciente, dar de alta al paciente, dar citas,  historial de citas por paciente, dia,mes, semana, ver paciente que existe en un rango de fechas, no asisten en un rango de fechas.
+
+el administrativo puede ver el historial de paciente, dar de alta al paciente, dar citas,  
+historial de citas por paciente, dia, mes, semana, ver paciente que existe en un rango de fechas, no asisten en un rango de fechas.
+

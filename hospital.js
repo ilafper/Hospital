@@ -24,10 +24,8 @@ async function run() {
         await client.db("hospital").command({ ping: 1 });
         console.log("OKOK CONECTADA!");
         const collection = client.db("hospital").collection("usuarios");
-        const collection2 = client.db("hospital").collection("pacientes");
         usuariosHospital = await collection.find().toArray();
-        pacientes = await collection2.find().toArray();
-        //console.log(pacientes);
+        
         //console.log(usuariosHospital);
         
     } finally {
@@ -77,6 +75,7 @@ async function menu1() {
                     }else{
                         console.log("No existe ese rol");
                     }
+
                 }else{
                     console.log("nombre o contraseña incorrecta");
                     
@@ -96,15 +95,15 @@ async function menu1() {
 //MENU DE ADMIN
 async function menuAdmin(nombre) {
     let opcion2=0;
-    const collection2 = client.db("hospital").collection("pacientes");
+    
     while (opcion2 !==2) {
         console.log("\n Bienvenido  "+ nombre);
-        console.log("1. Dar de alta");
+        console.log("1. Crear especialista");
         console.log("2. Salir");
         opcion2 = parseInt(await leeMenu("Seleccione opción: "));
         switch (opcion2) {
             case 1:
-                await crearPaciente();
+                await crearEspecialista();
                 break;
             case 2:
                 console.log("Saliendo...");
@@ -120,19 +119,31 @@ async function menuAdmin(nombre) {
 
 
 
-//MENU DE ADMINISTRATIVOS
+//MENU DE ADMINISTRATIVOS.
 async function menuAdministrativo(nombre) {
+    
     let opcion=0;
-    while (opcion !=2) {
+    while (opcion !=3) {
         console.log("\nBienvenido "+ nombre);
-        console.log("1. administrativo");
-        console.log("2. Salir");
+        console.log("1. Crear paciente");
+        console.log("2. historialCitas");
+        console.log("3. Añadir cita");
+        console.log("4. Salir");
         opcion = parseInt(await leeMenu("Seleccione opción: "));
         switch (opcion) {
             case 1:
+                await crearPaciente();
                 console.log("administrativo");
                 break;
             case 2:
+                await citasUsuarioSelec();
+                break;
+            case 3:
+                await darCita();
+                await menuAdministrativo(nombre);
+                break;
+
+            case 4:
                 console.log("saliendo...");
                 await menu1();
                 break;
@@ -144,6 +155,8 @@ async function menuAdministrativo(nombre) {
 }
 
 
+
+// crear paciente.
 async function crearPaciente() {
     const uri = 'mongodb+srv://ialfper:ialfper21@alumnos.zoinj.mongodb.net/?retryWrites=true&w=majority&appName=alumnos';
     const client = new MongoClient(uri, {
@@ -158,23 +171,23 @@ async function crearPaciente() {
         await client.connect();
         const collection = client.db("hospital").collection("pacientes");
 
-        // Pedimos los datoss
+        // Pedir datos
         let nuevoNombre = await leeMenu("Nuevo nombre del paciente: ");
         let nuevoApellido = await leeMenu("Nuevo apellido del paciente: ");
         let nuevoDireccion = await leeMenu("Dirección del paciente: ");
         let nuevoTelefono = await leeMenu("Teléfono del paciente: ");
-
-        // Creamos el objeto paciente
+        
+        // Creamos el objeto NuevoPaciente
         let nuevoPaciente = {
             nombre: nuevoNombre,
             apellido: nuevoApellido,
             telefono: nuevoTelefono,
-            direccion: nuevoDireccion
+            direccion: nuevoDireccion,
         };
 
         // Insertamos en MongoDB
         await collection.insertOne(nuevoPaciente);
-
+        
         console.log("Se ha creado al paciente:", nuevoPaciente);
         
     } catch (err) {
@@ -183,6 +196,159 @@ async function crearPaciente() {
         await client.close();
     }
 }
+
+
+async function crearEspecialista() {
+    const uri = 'mongodb+srv://ialfper:ialfper21@alumnos.zoinj.mongodb.net/?retryWrites=true&w=majority&appName=alumnos';
+    const client = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            strict: true,
+            deprecationErrors: true,
+        }
+    });
+
+    try {
+        await client.connect();
+        const collection = client.db("hospital").collection("especialista");
+        
+        // Pedir datos.
+        
+        let nuevoNombre = await leeMenu("Nuevo nombre del especialista: ");
+        let nuevoProfesion = await leeMenu("Nueva Profesion: ");
+    
+        // Creamos el objeto NuevoPaciente.
+        let nuevoEspecialista= {
+            nombre: nuevoNombre,
+            profesion: nuevoProfesion,
+        };
+
+        // Insertamos en MongoDB
+        await collection.insertOne(nuevoEspecialista);
+        console.log("Se ha creado al especialista:", nuevoEspecialista);
+        
+    } catch (err) {
+        console.error("nono"+ err);
+    } finally {
+        await client.close();
+    }
+}
+
+async function darCita() {
+    const uri = 'mongodb+srv://ialfper:ialfper21@alumnos.zoinj.mongodb.net/?retryWrites=true&w=majority&appName=alumnos';
+    const client = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            strict: true,
+            deprecationErrors: true,
+        }
+    });
+
+    try {
+        await client.connect();
+        const citas = client.db("hospital").collection("citas");
+        const pacientes = client.db("hospital").collection("pacientes");
+        let listaPacientes = await pacientes.find().toArray();
+        let id=1;
+        console.log("Lista de pacientes:");
+
+         //console.log(listaPacientes);
+        for (let i = 0; i < listaPacientes.length; i++) {
+            console.log(`${id++}. ${listaPacientes[i].nombre} ${listaPacientes[i].apellido}`);
+        }
+
+        
+        let seleccion = parseInt(await leeMenu("Selecciona el número del paciente: "));
+        if (isNaN(seleccion) || seleccion < 0 || seleccion >= pacientes.length) {
+            console.log("Selección inválida.");
+            return;
+        }
+
+        const pacienteSeleccionado = listaPacientes[seleccion -1];
+
+        let dia = await leeMenu("Día de la cita: ");
+        let mes = await leeMenu("Mes de la cita: ");
+        let año = await leeMenu("Año de la cita: ");
+
+        let fechaCita = new Date(año, mes - 1, dia); // mes - 1 porque van de 0 a 11
+        let pendiente="pendiente";
+
+        let cita = {
+            nombrePaciente: `${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellido}`,
+            fecha: fechaCita,
+            codigoPaciente:pacienteSeleccionado._id,
+            asistio: pendiente
+        };
+
+        await citas.insertOne(cita);
+
+        console.log("Cita guardada correctamente:", cita);
+        
+    } catch (err) {
+        console.error("nono"+ err);
+    } finally {
+        await client.close();
+    }
+
+}
+
+async function citasUsuarioSelec() {
+    const uri = 'mongodb+srv://ialfper:ialfper21@alumnos.zoinj.mongodb.net/?retryWrites=true&w=majority&appName=alumnos';
+    const client = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            strict: true,
+            deprecationErrors: true,
+        }
+    });
+
+    try {
+        await client.connect();
+        const citas = client.db("hospital").collection("citas");
+        const pacientes = client.db("hospital").collection("pacientes");
+        let listaPacientes = await pacientes.find().toArray();
+        let listacitas = await citas.find().toArray();
+        let id=1;
+        console.log("Lista de pacientes:");
+
+        for (let i = 0; i < listaPacientes.length; i++) {
+            console.log(`${id++}. ${listaPacientes[i].nombre} ${listaPacientes[i].apellido}`);
+        }
+
+        let seleccion = parseInt(await leeMenu("Selecciona el número del paciente: "));
+        if (isNaN(seleccion) || seleccion < 0 || seleccion >= pacientes.length) {
+            console.log("Selección inválida.");
+            return;
+        }
+
+        const pacienteSeleccionado = listaPacientes[seleccion -1];
+        
+        
+        let citasPacienteSelec=[];
+        for (let i = 0; i < listacitas.length; i++) {
+
+           if (pacienteSeleccionado._id.toString() === listacitas[i].codigoPaciente.toString()) {
+            citasPacienteSelec.push(listacitas[i]);
+            }
+        
+            
+        }
+        console.log(citasPacienteSelec);
+        
+
+        
+        
+    } catch (err) {
+        console.error("nono"+ err);
+    } finally {
+        await client.close();
+    }
+}
+
+
+
+
+
 
 
 
