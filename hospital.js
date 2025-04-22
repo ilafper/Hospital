@@ -65,7 +65,6 @@ async function menu1() {
                         //console.log("Nombre o contraseña incorrecta");
                     }
                 }
-                
 
                 if (usuarioEncontrado) {
                     if (usuarioEncontrado.rol==="admin") {
@@ -123,13 +122,14 @@ async function menuAdmin(nombre) {
 async function menuAdministrativo(nombre) {
     
     let opcion=0;
-    while (opcion !=3) {
+    while (opcion !=6) {
         console.log("\nBienvenido "+ nombre);
         console.log("1. Crear paciente");
         console.log("2. historialCitas");
         console.log("3. Añadir cita");
         console.log("4. Editar cita(asistio o no)");
-        console.log("5. Salir");
+        console.log("5. Filtro");
+        console.log("6. Salir");
         opcion = parseInt(await leeMenu("Seleccione opción: "));
         switch (opcion) {
             case 1:
@@ -148,9 +148,14 @@ async function menuAdministrativo(nombre) {
                 await cambiarCita();
                 await menuAdministrativo(nombre);
                 break;
+
             case 5:
-                console.log("saliendo...");
-                await menu1();
+                await Filtro();
+                await menuAdministrativo(nombre);
+                break;
+            case 6:
+            console.log("saliendo...");
+            await menu1();
                 break;
             default:
                 break;
@@ -278,7 +283,7 @@ async function darCita() {
 
         let cita = {
             nombrePaciente: `${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellido}`,
-            fecha: fechaCita,
+            fecha: fechaCita.toLocaleDateString(),
             codigoPaciente:pacienteSeleccionado._id,
             asistio: pendiente
         };
@@ -311,6 +316,7 @@ async function citasUsuarioSelec() {
         const pacientes = client.db("hospital").collection("pacientes");
         let listaPacientes = await pacientes.find().toArray();
         let listacitas = await citas.find().toArray();
+        
         let id=1;
         console.log("Lista de pacientes:");
 
@@ -327,20 +333,17 @@ async function citasUsuarioSelec() {
         const pacienteSeleccionado = listaPacientes[seleccion -1];
         
         
-        let citasPacienteSelec=[];
+        let nId=1;
         for (let i = 0; i < listacitas.length; i++) {
 
            if (pacienteSeleccionado._id.toString() === listacitas[i].codigoPaciente.toString()) {
-                citasPacienteSelec.push(listacitas[i]);
+                console.log(`${nId++}. Nombre:${listacitas[i].nombrePaciente}, fecha:${listacitas[i].fecha}, asistio:${listacitas[i].asistio}`);
+                
             }
         
             
         }
         
-
-        console.log(citasPacienteSelec);
-        
-
         
         
     } catch (err) {
@@ -362,6 +365,7 @@ async function cambiarCita() {
     });
 
     try {
+
         await client.connect();
         const citas = client.db("hospital").collection("citas");
         let listacitas = await citas.find().toArray();
@@ -396,7 +400,88 @@ async function cambiarCita() {
 }
 
 
+async function Filtro() {
+    let opcion=0;
 
+
+    while (opcion!=5) {
+        console.log("\n1. Filtrara por dia");
+        console.log("2. Filtrara por mes");
+        console.log("3. Filtrara por año");
+        console.log("4. Filtrara por rango");
+        console.log("5. Salir");
+
+        opcion = parseInt(await leeMenu("Seleccione opción: "));
+        switch (opcion) {
+            case 1:
+                await filtrarPorDia();
+                break;
+            case 2:
+
+                break;
+            case 3:
+
+                break;
+            case 4:
+
+                break;
+            case 5:
+
+                break;    
+            default:
+                break;
+        }
+    }
+
+
+
+}
+async function filtrarPorDia() {
+    const uri = 'mongodb+srv://ialfper:ialfper21@alumnos.zoinj.mongodb.net/?retryWrites=true&w=majority&appName=alumnos';
+    const client = new MongoClient(uri, {
+        serverApi: {
+            version: ServerApiVersion.v1,
+            strict: true,
+            deprecationErrors: true,
+        }
+    });
+
+    try {
+        await client.connect();
+        const citas = client.db("hospital").collection("citas");
+
+        let filtroDia = parseInt(await leeMenu("Selecciona el número de día (1-31): "));
+        if (isNaN(filtroDia) || filtroDia < 1 || filtroDia > 31) {
+            console.log("Día inválido.");
+            return;
+        }
+
+        const listacitas = await citas.find().toArray();
+
+        const citasFiltradas = listacitas.filter(cita => {
+            const fecha = new Date(cita.fecha);
+            return fecha.getDate() === filtroDia;
+        });
+
+        console.log(citasFiltradas);
+        
+        if (citasFiltradas.length === 0) {
+            console.log(`No hay citas para el día ${filtroDia}.`);
+        } else {
+            console.log(`Citas para el día ${filtroDia}:`);
+            for (let i = 0; i < citasFiltradas.length; i++) {
+                
+                console.log(`${i + 1}. ${citasFiltradas[i].nombrePaciente} - ${citasFiltradas[i].fecha}`);
+                
+            }
+        }
+
+    } catch (err) {
+        console.error("Error: " + err);
+    } finally {
+        await client.close();
+    }
+}
 
 
 async function iniciarPrograma() {
