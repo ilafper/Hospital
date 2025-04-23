@@ -39,11 +39,14 @@ function leeMenu(question) {
         });
     });
 }
+
+
 //menu1 para iniciar sesion
 async function menu1() {
     let opcion = 0;
 
     while (opcion !== 2) {
+        
         console.log("\nINICIAR SESION");
         console.log("1. Iniciar sesion");
         console.log("2. Salir");
@@ -58,10 +61,12 @@ async function menu1() {
                 for (let i = 0; i < usuariosHospital.length; i++) {
                     if (nombre===usuariosHospital[i].usuario && contra===usuariosHospital[i].contra) {
                         usuarioEncontrado=usuariosHospital[i];
-                        console.log(usuarioEncontrado);
+                        //console.log(usuarioEncontrado);
                         break;
                     }else{
+                        
                         //console.log("Nombre o contraseña incorrecta");
+                    
                     }
                 }
 
@@ -115,6 +120,7 @@ async function menuAdmin(nombre) {
         }
     }
 }
+
 
 
 
@@ -412,10 +418,10 @@ async function Filtro() {
 
 
     while (opcion!=5) {
-        console.log("\n1. Filtrara por dia");
-        console.log("2. Filtrara por mes");
-        console.log("3. Filtrara por año");
-        console.log("4. Filtrara por rango");
+        console.log("\n1. Filtrar por dia");
+        console.log("2. Filtrar por mes");
+        console.log("3. Filtrar por año");
+        console.log("4. Filtrar por rango");
         console.log("5. Salir");
 
         opcion = parseInt(await leeMenu("Seleccione opción: "));
@@ -469,7 +475,9 @@ async function filtrarPorDia() {
         const listacitas = await citas.find().toArray();
         //APLICAMOS UN FILTRO PARA BUSCAR
         const citasFiltradas = listacitas.filter(cita => {
+            //variable para tener la fecha de las citas
             const fecha = new Date(cita.fecha);
+            //compara el dia de la fecha de las citas con el numero que le pasamos.
             return fecha.getDate() === filtroDia;
         });
 
